@@ -19,12 +19,49 @@ method update(this: GameScene): void {.base.} =
 method render(this: GameScene, render: RendererPtr): void {.base.} =
   quit "Override plz"
 
+type
+  GameRect = object
+    x, y, w, h, vx, vy: int
+
+proc update(r: var GameRect) =
+  r.x += r.vx
+  if r.x < 0:
+    r.x = 0
+    r.vx *= -1
+  elif r.x + r.w > WINDOW_WIDTH:
+    r.x = WINDOW_WIDTH - 100
+    r.vx *= -1
+
+  r.y += r.vy
+  if r.y < 0:
+    r.y = 0
+    r.vy *= -1
+  elif r.y + r.h > WINDOW_HEIGHT:
+    r.y = WINDOW_HEIGHT - 100
+    r.vy *= -1
+
+proc get_rect(r: GameRect): sdl2.Rect =
+  result = sdl2.rect(
+    x = cint(r.x),
+    y = cint(r.y),
+    w = cint(r.w),
+    h = cint(r.h)
+  )
+
 proc main =
   discard sdl2.init(INIT_EVERYTHING)
 
   var
     window: WindowPtr
     render: RendererPtr
+    my_rect = GameRect(
+      x: 100,
+      y: 100,
+      w: 100,
+      h: 100,
+      vx: 5,
+      vy: 5,
+    )
 
   window = createWindow(
     title = "SDL Skeleton",
@@ -43,8 +80,6 @@ proc main =
   var
     evt = sdl2.defaultEvent
     runGame = true
-    x_incr = 5
-    rect_x = 100
 
   while runGame:
     while pollEvent(evt):
@@ -55,26 +90,16 @@ proc main =
       else:
         discard
 
-    rect_x = rect_x + x_incr
+    my_rect.update()
 
-    if rect_x < 0:
-      rect_x = 0
-      x_incr *= -1
-    elif rect_x + 100 > WINDOW_WIDTH:
-      rect_x = WINDOW_WIDTH - 100
-      x_incr *= -1
     render.setDrawColor(0, 0, 0, 255)
     render.clear
 
     var
-      my_rect = sdl2.rect(
-        x = cint(rect_x),
-        y = cint(100),
-        w = cint(100),
-        h = cint(100),
-      )
+      sdl_rect = my_rect.get_rect()
+
     render.setDrawColor(255, 0, 0, 255)
-    render.fillRect(my_rect)
+    render.fillRect(sdl_rect)
 
     render.present
 
